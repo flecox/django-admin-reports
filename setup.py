@@ -33,4 +33,8 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
     ],
+    install_requires=[
+        'django>=1.4',
+        'unicodecsv==0.14.1'
+    ],
 )

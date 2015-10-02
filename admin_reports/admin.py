@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.http import HttpResponse
 from django.contrib.admin.utils import display_for_value, label_for_field
 from django.utils.translation import ugettext_lazy as _
+from django.http import StreamingHttpResponse
 
 
 class ReportFilter(admin.SimpleListFilter):
@@ -62,6 +63,8 @@ class ReportAdminBase(admin.ModelAdmin):
                 queryset = change_view.queryset
                 response, writer = self.make_csv_response_and_writer()
                 self.make_csv(queryset, writer)
+                response = StreamingHttpResponse(writer, content_type="text/csv")
+                response['Content-Disposition'] = 'attachment; filename="%s"' % self.file_name
                 return response
         return super(ReportAdminBase, self).changelist_view(request, extra_context)
 
