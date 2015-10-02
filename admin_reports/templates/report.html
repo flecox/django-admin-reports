@@ -1,0 +1,9 @@
+{% load i18n %}
+<style>
+	#changelist-filter h3.get-report-admin a {
+		color: #5b80b2;
+	}
+</style>
+{% for choice in choices %}
+    <h3 class="get-report-admin"><a href="{{ choice.query_string|iriencode }}">{{ choice.display }}</a></h3>
+{% endfor %}
