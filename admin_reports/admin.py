@@ -88,9 +88,9 @@ class ReportAdminBase(admin.ModelAdmin):
         return label_for_field(field_name, self.model, model_admin=self, return_attr=True)
 
     def make_csv(self, queryset, writer):
-        headers = [self.label_for_field(field_name) for field_name in self.list_display]
-        writer.writerow([head[0] for head in headers])
         rows = []
+        headers = [self.label_for_field(field_name) for field_name in self.list_display]
+        rows.append(writer.writerow([head[0] for head in headers]))
         for obj in queryset:
             row = []
             for index, key in enumerate(self.list_display):
