@@ -1,9 +1,17 @@
 import unicodecsv as csv
 from django.contrib import admin
-from django.http import HttpResponse
 from django.contrib.admin.utils import display_for_value, label_for_field
 from django.utils.translation import ugettext_lazy as _
 from django.http import StreamingHttpResponse
+
+
+class Echo(object):
+    """An object that implements just the write method of the file-like
+    interface.
+    """
+    def write(self, value):
+        """Write the value by returning it, instead of storing in a buffer."""
+        return value
 
 
 class ReportFilter(admin.SimpleListFilter):
@@ -61,10 +69,10 @@ class ReportAdminBase(admin.ModelAdmin):
                 pass
             if change_view:
                 queryset = change_view.queryset
-                response, writer = self.make_csv_response_and_writer()
-                self.make_csv(queryset, writer)
-                response = StreamingHttpResponse(writer, content_type="text/csv")
-                response['Content-Disposition'] = 'attachment; filename="%s"' % self.file_name
+                writer = self.make_csv_response_and_writer()
+                rows = self.make_csv(queryset, writer)
+                response = StreamingHttpResponse(rows, content_type="text/csv")
+                response['Content-Disposition'] = 'attachment; filename="%s"' % self.report_filename
                 return response
         return super(ReportAdminBase, self).changelist_view(request, extra_context)
 
@@ -72,17 +80,17 @@ class ReportAdminBase(admin.ModelAdmin):
         """
         Make a blank csv response and writer.
         """
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="%s"' % self.report_filename
-        writer = csv.writer(response)
-        return response, writer
+        pseudo_buffer = Echo()
+        writer = csv.writer(pseudo_buffer)
+        return writer
 
     def label_for_field(self, field_name):
-    	return label_for_field(field_name, self.model, model_admin=self, return_attr=True)
+        return label_for_field(field_name, self.model, model_admin=self, return_attr=True)
 
     def make_csv(self, queryset, writer):
         headers = [self.label_for_field(field_name) for field_name in self.list_display]
         writer.writerow([head[0] for head in headers])
+        rows = []
         for obj in queryset:
             row = []
             for index, key in enumerate(self.list_display):
@@ -95,4 +103,5 @@ class ReportAdminBase(admin.ModelAdmin):
                         row.append("")
                 else:
                     row.append("")
-            writer.writerow(row)
+            rows.append(writer.writerow(row))
+        return rows
